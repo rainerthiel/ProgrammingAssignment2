@@ -47,11 +47,74 @@ cacheSolve <- function(makem, ...) {
 
     minv <- makem$getminv()
     if(!is.null(minv)) {
-        message("getting cached inverted matrix data")
+        message("2. Fetch cached inverted matrix data")
         return(minv)
     }
     data <- makem$get()
     minv <- solve(data, ...)
     makem$setminv(minv)
+    message("1. Calculate inverse matrix and save in cache")
     minv
+}
+
+##
+## runTests
+##
+## This function runs a few examples to test the matrix inversion and caching.
+## 
+## There are 5 test cases, 3 are expected to work, 2 are expected to fail.
+## An inner function solveAndCheck() handles the common stuff.
+## A successful test returns the associated identity matrix.
+## A test failure reports the error and continues onto the next test.
+## 
+## Note: I have had to round the identity matrix values (8 significant digits)
+## 
+
+runTests <- function() {
+    
+    matObj <- makeCacheMatrix()                    # instantiate matrix object
+    
+    solveAndCheck <- function() {               # the common stuff
+        
+        matObj$set(m1)                          # set the matrix
+
+        tryCatch(                               # wrap to trap and continue
+                                                # and continue
+            {
+                message(label, "Start")
+                cacheSolve(matObj)              # calculate inverse and cache
+                n1 <- cacheSolve(matObj)        # fetch from cache
+                message("3. Calculate and show rounded identity matrix")
+                idm <- m1 %*% n1
+                print(round(idm, 8))               
+                message(label, "*** SUCCESS ***")
+            },
+            error=function(e) {
+                message(label, "*** FAILURE ***")
+                print(e)
+            }
+        )
+        
+    }
+
+    label <- "Test1: "
+    m1 <- matrix(c(1/2,-1/4,-1,3/4),nrow=2)     # discussion example matrix
+    solveAndCheck()
+    
+    label <- "Test2: "
+    m1 <- matrix(rnorm(144),nrow=12)            # another example matrix
+    solveAndCheck()
+    
+    label <- "Test3: "
+    m1 <- matrix(rnorm(144),nrow=8)             # bad - not a square matrix
+    solveAndCheck()
+    
+    label <- "Test4: "
+    m1 <- matrix(c(3,2,0,7,0,1,2,-2,1), nrow=3) # another example matrix
+    solveAndCheck()
+    
+    label <- "Test5: "
+    m1 <- matrix(11:26, nrow=4)                 # bad - singular matrix
+    solveAndCheck()
+    
 }
